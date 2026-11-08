@@ -1,0 +1,24 @@
+<Window x:Class="BGAReflowStudio.AboutWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="About" Width="430" SizeToContent="Height"
+        ResizeMode="NoResize" WindowStartupLocation="CenterOwner"
+        Background="{StaticResource Canvas}" Icon="/icon.ico">
+  <Border Style="{StaticResource Card}" Margin="18">
+    <StackPanel>
+      <TextBlock Text="BGA Reflow Studio" Style="{StaticResource H1}"/>
+      <TextBlock x:Name="VersionText" Text="Version 0.1" Style="{StaticResource Muted}" Margin="0,4,0,14"/>
+      <TextBlock TextWrapping="Wrap" Foreground="{StaticResource Ink}"
+                 Text="Reflow profiling and control for the ACHI IR PRO SC and ACHI IR 6500 BGA rework stations, driving the Altec PC410 temperature controller."/>
+      <TextBlock Text="© Glow Electronics" Style="{StaticResource Muted}" Margin="0,14,0,0"/>
+      <TextBlock Margin="0,4,0,0">
+        <Hyperlink NavigateUri="https://glowelectronics.net/" RequestNavigate="Link_RequestNavigate">https://glowelectronics.net/</Hyperlink>
+      </TextBlock>
+      <TextBlock Margin="0,2,0,0">
+        <Hyperlink NavigateUri="https://github.com/glowelectronics" RequestNavigate="Link_RequestNavigate">https://github.com/glowelectronics</Hyperlink>
+      </TextBlock>
+      <TextBlock x:Name="BuildText" Text="Build:" Style="{StaticResource Muted}" Margin="0,8,0,0"/>
+      <Button Content="OK" Style="{StaticResource PrimaryButton}" Width="90" HorizontalAlignment="Right" Margin="0,18,0,0" Click="Ok_Click"/>
+    </StackPanel>
+  </Border>
+</Window>

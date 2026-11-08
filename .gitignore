@@ -1,0 +1,26 @@
+# ---- .NET build output (regenerated on build — never commit) ----
+[Bb]in/
+[Oo]bj/
+
+# ---- IDE / tooling ----
+.vs/
+.idea/
+*.user
+*.suo
+*.userprefs
+
+# ---- Release artifacts (publish to GitHub Releases, not the repo) ----
+/releases/
+
+# ---- Local-only working folder (not for publication) ----
+/decompiled/
+
+# ---- Runtime files generated beside the app ----
+settings.ini
+serial.log
+achi-reflow.log
+profile-names.ini
+
+# ---- OS cruft ----
+Thumbs.db
+.DS_Store

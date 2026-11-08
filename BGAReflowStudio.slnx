@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="BGAReflowStudio.Tests/BGAReflowStudio.Tests.csproj" />
+  <Project Path="BGAReflowStudio/BGAReflowStudio.csproj" />
+</Solution>

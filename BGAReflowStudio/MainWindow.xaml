@@ -1,0 +1,359 @@
+<Window x:Class="BGAReflowStudio.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="clr-namespace:BGAReflowStudio"
+        xmlns:sp="clr-namespace:ScottPlot.WPF;assembly=ScottPlot.WPF"
+        Title="BGA Reflow Studio" Height="880" Width="1460" MinHeight="720" MinWidth="1180"
+        Background="{StaticResource Canvas}" WindowStartupLocation="CenterScreen" Icon="/icon.ico">
+
+  <DockPanel>
+
+    <!-- Menu -->
+    <Menu DockPanel.Dock="Top" Padding="6,2" Background="Transparent">
+      <MenuItem Header="_File">
+        <MenuItem Header="Local Database">
+          <MenuItem Header="Export Local Database..." Click="ExportLocalDb_Click"/>
+          <MenuItem Header="Import Local Database..." Click="ImportLocalDb_Click"/>
+          <Separator/>
+          <MenuItem Header="Clean Database..." Click="CleanDb_Click"/>
+        </MenuItem>
+        <Separator/>
+        <MenuItem Header="Connection">
+          <MenuItem Header="Connect" Click="OpenPort_Click"/>
+          <MenuItem Header="Disconnect" Click="ClosePort_Click"/>
+          <Separator/>
+          <MenuItem Header="Settings" Click="ConfigPort_Click"/>
+        </MenuItem>
+        <MenuItem Header="Serial Terminal..." Click="SerialTerminal_Click"/>
+        <Separator/>
+        <MenuItem Header="E_xit" Click="Exit_Click"/>
+      </MenuItem>
+      <MenuItem Header="_Edit">
+        <MenuItem Header="Profile">
+          <MenuItem Header="Load Profile..." Click="ImportProfile_Click"/>
+          <MenuItem Header="Save Profile As..." Click="SaveProfileAs_Click"/>
+        </MenuItem>
+        <MenuItem Header="Rework Machines">
+          <MenuItem Header="Add Machine..." Click="AddMachine_Click"/>
+          <MenuItem Header="Remove Machine..." Click="RemoveMachine_Click"/>
+        </MenuItem>
+        <MenuItem Header="Screenshot..." Click="Screenshot_Click"/>
+      </MenuItem>
+      <MenuItem Header="_Help">
+        <MenuItem x:Name="ManualsMenu" Header="Manuals" SubmenuOpened="ManualsMenu_SubmenuOpened">
+          <MenuItem Header="(loading)"/>
+        </MenuItem>
+        <MenuItem Header="Support" Click="Support_Click"/>
+        <MenuItem Header="About" Click="About_Click"/>
+      </MenuItem>
+    </Menu>
+
+    <!-- Activity bar (bottom) -->
+    <Border DockPanel.Dock="Bottom" Background="{StaticResource Activity}" CornerRadius="10" Padding="12,9" Margin="18,0,18,16">
+      <DockPanel>
+        <TextBlock Text="ACTIVITY" Foreground="#94A3B8" FontSize="10" FontWeight="Bold" VerticalAlignment="Center" Margin="4,0"/>
+        <TextBlock x:Name="StatusText" Text="Profile editor ready" Foreground="#D1E7FF" VerticalAlignment="Center" Margin="16,0"/>
+        <TextBlock DockPanel.Dock="Right" Text="BGA Reflow Studio" Foreground="#94A3B8" VerticalAlignment="Center" Margin="8,0"/>
+      </DockPanel>
+    </Border>
+
+    <!-- Body -->
+    <Grid Margin="18,10,18,10">
+      <Grid.RowDefinitions>
+        <RowDefinition Height="Auto"/>
+        <RowDefinition Height="*"/>
+      </Grid.RowDefinitions>
+
+      <!-- Connection bar (also carries COM status + cycle time) -->
+      <Border Grid.Row="0" Style="{StaticResource Card}" Padding="14,12" Margin="0,0,0,14">
+        <DockPanel>
+          <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+            <Button x:Name="CoffeeButton" ToolTip="I Love Coffee" Click="Support_Click"
+                    Background="Transparent" BorderThickness="0" Padding="4" Margin="2,0,10,0" Cursor="Hand">
+              <Viewbox Width="22" Height="22">
+                <Canvas Width="24" Height="24">
+                  <Path Fill="#7B5333" Data="M6,9 L17,9 L16,16.5 C15.7,17.9 14.5,18.8 13,18.8 L10,18.8 C8.5,18.8 7.3,17.9 7,16.5 Z"/>
+                  <Path Stroke="#7B5333" StrokeThickness="1.6" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"
+                        Data="M17,10.5 C20,10.5 20,14.5 17,14.5 M9,2.5 C8,3.7 10,4.7 9,6 M13,2.5 C12,3.7 14,4.7 13,6 M5,20.5 L18,20.5"/>
+                </Canvas>
+              </Viewbox>
+            </Button>
+            <Border x:Name="StatusBadge" Background="{StaticResource WarnBg}" CornerRadius="8" Padding="12,8" Margin="4,0">
+              <TextBlock x:Name="StatusBadgeText" Text="COM CLOSED" Foreground="{StaticResource Warn}" FontWeight="SemiBold"/>
+            </Border>
+            <Border Background="White" BorderBrush="{StaticResource Line}" BorderThickness="1" CornerRadius="8" Padding="12,8" Margin="4,0">
+              <TextBlock x:Name="CycleText" Text="Cycle 00:00" Foreground="{StaticResource Ink}" FontWeight="SemiBold"/>
+            </Border>
+          </StackPanel>
+          <StackPanel Orientation="Horizontal">
+            <TextBlock Text="MACHINE" Style="{StaticResource StatLabel}" VerticalAlignment="Center" Margin="2,0,8,0"/>
+            <ComboBox x:Name="MachineBox" Width="170" SelectedIndex="0">
+              <ComboBoxItem Content="ACHI IR PRO SC"/>
+              <ComboBoxItem Content="ACHI IR 6500"/>
+            </ComboBox>
+            <TextBlock Text="CONTROLLER" Style="{StaticResource StatLabel}" VerticalAlignment="Center" Margin="18,0,8,0"/>
+            <ComboBox x:Name="ControllerBox" Width="140" SelectedIndex="0">
+              <ComboBoxItem Content="Altec PC410"/>
+            </ComboBox>
+            <TextBlock Text="PORT" Style="{StaticResource StatLabel}" VerticalAlignment="Center" Margin="18,0,8,0"/>
+            <ComboBox x:Name="PortBox" Width="100"/>
+            <Button Content="Refresh" Click="RefreshPorts_Click"/>
+            <Button Content="Connect" Style="{StaticResource PrimaryButton}" Click="Connect_Click" x:Name="ConnectButton"/>
+            <Button Content="Settings" Click="ConfigPort_Click"/>
+            <TextBlock x:Name="ConnectionText" Text="Not connected" Style="{StaticResource Muted}" VerticalAlignment="Center" Margin="12,0"/>
+          </StackPanel>
+        </DockPanel>
+      </Border>
+
+      <!-- Main content -->
+      <Grid Grid.Row="1">
+        <Grid.ColumnDefinitions>
+          <ColumnDefinition Width="2.0*"/>
+          <ColumnDefinition Width="14"/>
+          <ColumnDefinition Width="1.0*"/>
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+          <RowDefinition Height="Auto"/>
+          <RowDefinition Height="Auto"/>
+          <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- Stat tiles -->
+        <UniformGrid Grid.Row="0" Grid.ColumnSpan="3" Columns="4" Margin="0,0,0,12">
+          <Border Style="{StaticResource Card}" Margin="0,0,10,0">
+            <StackPanel>
+              <TextBlock Text="BOARD TEMPERATURE" Style="{StaticResource StatLabel}" TextWrapping="Wrap"/>
+              <TextBlock x:Name="TopTemp" Text="-- °C" Style="{StaticResource StatValue}" Foreground="#1F8A4C"/>
+              <TextBlock x:Name="PowerTopText" Text="Power 0%" Style="{StaticResource Muted}" Margin="0,0,0,3"/>
+              <ProgressBar x:Name="PowerTopBar" Height="8" Maximum="100" Foreground="{StaticResource Success}"/>
+            </StackPanel>
+          </Border>
+          <Border Style="{StaticResource Card}" Margin="0,0,10,0">
+            <StackPanel>
+              <TextBlock Text="BOTTOM HEATER TEMPERATURE" Style="{StaticResource StatLabel}" TextWrapping="Wrap"/>
+              <TextBlock x:Name="BottomTemp" Text="-- °C" Style="{StaticResource StatValue}" Foreground="#2563CC"/>
+              <TextBlock x:Name="PowerBottomText" Text="Power 0%" Style="{StaticResource Muted}" Margin="0,0,0,3"/>
+              <ProgressBar x:Name="PowerBottomBar" Height="8" Maximum="100" Foreground="{StaticResource Accent}"/>
+            </StackPanel>
+          </Border>
+          <Border Style="{StaticResource Card}" Margin="0,0,10,0">
+            <StackPanel>
+              <TextBlock Text="SET POINT (Set Point / Step Target)" Style="{StaticResource StatLabel}" TextWrapping="Wrap"/>
+              <TextBlock x:Name="SetPointText" Text="-- °C" Style="{StaticResource StatValue}" Foreground="#D97706"/>
+              <TextBlock x:Name="SegmentText" Text="Segment --" Style="{StaticResource Muted}"/>
+            </StackPanel>
+          </Border>
+          <Border Style="{StaticResource Card}">
+            <StackPanel>
+              <TextBlock Text="PROCESS STATE" Style="{StaticResource StatLabel}"/>
+              <TextBlock x:Name="ProcessState" Text="Idle" Style="{StaticResource StatValue}"/>
+              <TextBlock x:Name="ElapsedText" Text="Ready for profile" Style="{StaticResource Muted}"/>
+            </StackPanel>
+          </Border>
+        </UniformGrid>
+
+        <!-- Action bar (all controls moved out of the Thermal Profile card) -->
+        <Border Grid.Row="1" Grid.ColumnSpan="3" Style="{StaticResource Card}" Padding="10,8" Margin="0,0,0,12">
+          <Grid>
+            <Grid.ColumnDefinitions>
+              <ColumnDefinition Width="Auto"/>
+              <ColumnDefinition Width="*"/>
+              <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- left: run controls -->
+            <StackPanel Grid.Column="0" Orientation="Horizontal">
+              <Button x:Name="StartButton" Content="Start" Style="{StaticResource SuccessButton}" Click="Start_Click"/>
+              <Button x:Name="StopButton" Content="Stop" Style="{StaticResource DangerButton}" Click="Stop_Click"/>
+              <Button x:Name="HoldButton" Content="Hold" Click="Hold_Click"/>
+            </StackPanel>
+
+            <!-- centre: transfer progress + trace toggles -->
+            <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+              <ProgressBar x:Name="TransferBar" Width="90" Height="14" Maximum="27" VerticalAlignment="Center"
+                           ToolTip="Transfer progress"/>
+              <CheckBox x:Name="Show1" Content="Temp.1" IsChecked="True" Margin="12,0,0,0" VerticalAlignment="Center" Checked="ShowSeries_Changed" Unchecked="ShowSeries_Changed"/>
+              <CheckBox x:Name="Show2" Content="Temp.2" IsChecked="False" Margin="8,0,0,0" VerticalAlignment="Center" Checked="ShowSeries_Changed" Unchecked="ShowSeries_Changed"/>
+              <CheckBox x:Name="SegBeep" Content="Segment Beep" IsChecked="True" Margin="8,0,0,0" VerticalAlignment="Center" Checked="SegBeep_Changed" Unchecked="SegBeep_Changed"/>
+            </StackPanel>
+
+            <!-- right: profile edit actions | controller transfers -->
+            <StackPanel Grid.Column="2" Orientation="Horizontal">
+              <Button Content="Export CSV" Click="Export_Click"/>
+              <Button Content="Hot Update" Click="HotUpdate_Click"/>
+              <Button x:Name="SaveButton" Content="Save" Style="{StaticResource SuccessButton}" Click="Save_Click"/>
+              <Border Width="1" Height="26" Background="{StaticResource Line}" Margin="10,2"/>
+              <Button Content="Download 1 Set" Click="SingleFrom_Click"/>
+              <Button Content="Download All" Click="AllFrom_Click"/>
+              <Button Content="Upload 1 Set" Click="SingleTo_Click"/>
+              <Button Content="Upload All" Click="AllTo_Click"/>
+              <Button Content="Compare &amp; Start" Style="{StaticResource PrimaryButton}" Click="Compare_Click"/>
+            </StackPanel>
+          </Grid>
+        </Border>
+
+        <!-- Left: editor + chart -->
+        <Border Grid.Row="2" Grid.Column="0" Style="{StaticResource Card}" Padding="18">
+          <ScrollViewer VerticalScrollBarVisibility="Auto">
+          <Grid>
+            <Grid.RowDefinitions>
+              <RowDefinition Height="Auto"/>
+              <RowDefinition Height="Auto"/>
+              <RowDefinition Height="Auto"/>
+              <RowDefinition Height="Auto"/>
+              <RowDefinition Height="Auto"/>
+              <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <!-- editor header -->
+            <DockPanel Grid.Row="0" Margin="0,0,0,10">
+              <Button DockPanel.Dock="Right" Content="Pop out ⤢" Padding="10,4" VerticalAlignment="Top"
+                      Click="PopoutChart_Click" ToolTip="Open the chart in a separate window that keeps updating live"/>
+              <StackPanel>
+                <TextBlock Text="Thermal Profile" Style="{StaticResource SectionTitle}"/>
+                <TextBlock Text="8-step heating recipe with live updates" Style="{StaticResource Muted}" Margin="0,3,0,0"/>
+              </StackPanel>
+            </DockPanel>
+
+            <!-- profile + heater selectors -->
+            <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,10">
+              <TextBlock Text="PROFILE" Style="{StaticResource StatLabel}" VerticalAlignment="Center" Margin="0,0,8,0"/>
+              <ComboBox x:Name="ProfileBox" Width="190" SelectionChanged="ProfileBox_SelectionChanged"/>
+              <TextBlock Text="HEATERS" Style="{StaticResource StatLabel}" VerticalAlignment="Center" Margin="20,0,8,0"/>
+              <ComboBox x:Name="HeaterBox" Width="130" SelectedIndex="0">
+                <ComboBoxItem Content="Together"/><ComboBoxItem Content="Top"/><ComboBoxItem Content="Bottom"/>
+              </ComboBox>
+              <TextBlock Text="HOLDBACK" Style="{StaticResource StatLabel}" VerticalAlignment="Center" Margin="20,0,8,0"/>
+              <TextBox x:Name="HoldbackBox" Width="70" LostFocus="Holdback_Changed" ToolTip="Range 5-30"/>
+            </StackPanel>
+
+            <!-- step grid (below the chart) -->
+            <DataGrid x:Name="StepsGrid" Grid.Row="4" Margin="0,14,0,0"
+                      CellEditEnding="StepsGrid_CellEditEnding"
+                      ScrollViewer.VerticalScrollBarVisibility="Disabled"
+                      PreviewMouseWheel="ForwardWheelToParent">
+              <DataGrid.Columns>
+                <DataGridTextColumn Header="STEP" Binding="{Binding Step}" IsReadOnly="True" Width="56"/>
+                <DataGridTextColumn Header="RAMP °C/s" Binding="{Binding Ramp, UpdateSourceTrigger=LostFocus, StringFormat=0.00}" Width="*"/>
+                <DataGridTextColumn Header="TARGET °C" Binding="{Binding Target, UpdateSourceTrigger=LostFocus}" Width="*"/>
+                <DataGridTextColumn Header="DWELL s" Binding="{Binding Dwell, UpdateSourceTrigger=LostFocus}" Width="*"/>
+              </DataGrid.Columns>
+            </DataGrid>
+
+            <!-- chart (wheel scrolls the card instead of zooming the plot) -->
+            <Border Grid.Row="3" BorderBrush="{StaticResource Line}" BorderThickness="1" CornerRadius="8" Background="#FBFCFE" Height="350">
+              <sp:WpfPlot x:Name="Plot" PreviewMouseWheel="ForwardWheelToParent"/>
+            </Border>
+          </Grid>
+          </ScrollViewer>
+        </Border>
+
+        <!-- Right: library, bottom heater, safety, power -->
+        <ScrollViewer Grid.Row="2" Grid.Column="2" VerticalScrollBarVisibility="Auto">
+          <StackPanel>
+
+            <!-- Profile Library (files) and Available Profiles (slots) side by side -->
+            <Grid Margin="0,0,0,12">
+              <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="10"/>
+                <ColumnDefinition Width="*"/>
+              </Grid.ColumnDefinitions>
+              <Border Grid.Column="0" Style="{StaticResource Card}">
+                <StackPanel>
+                  <DockPanel>
+                    <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                      <Button Content="+" Width="20" Height="22" Padding="0" Margin="0" FontSize="14" FontWeight="Bold" Click="AddProfileFile_Click" ToolTip="New profile file"/>
+                      <Button Content="&#8722;" Width="20" Height="22" Padding="0" Margin="2,0,0,0" FontSize="14" FontWeight="Bold" Click="RemoveProfileFile_Click" ToolTip="Delete the selected profile file"/>
+                      <Button Width="20" Height="22" Padding="0" Margin="2,0,0,0" Click="DuplicateProfileFile_Click" ToolTip="Duplicate the selected profile file">
+                        <Grid Width="12" Height="12">
+                          <Rectangle Width="8" Height="8" RadiusX="2" RadiusY="2" Stroke="{StaticResource Ink}" StrokeThickness="1.3" Fill="Transparent" HorizontalAlignment="Left" VerticalAlignment="Top"/>
+                          <Rectangle Width="8" Height="8" RadiusX="2" RadiusY="2" Stroke="{StaticResource Ink}" StrokeThickness="1.3" Fill="{StaticResource CardBg}" HorizontalAlignment="Right" VerticalAlignment="Bottom"/>
+                        </Grid>
+                      </Button>
+                    </StackPanel>
+                    <TextBlock Text="Profile Library" Style="{StaticResource SectionTitle}" VerticalAlignment="Center"/>
+                  </DockPanel>
+                  <TextBlock Text="Files in \profiles — double-click to rename" Style="{StaticResource Muted}" Margin="0,3,0,8" TextWrapping="Wrap"/>
+                  <ListBox x:Name="LibraryFilesList" Height="120" BorderThickness="0"
+                           SelectionChanged="LibraryFiles_SelectionChanged"
+                           MouseDoubleClick="LibraryFiles_DoubleClick"/>
+                </StackPanel>
+              </Border>
+              <Border Grid.Column="2" Style="{StaticResource Card}">
+                <StackPanel>
+                  <TextBlock Text="Available Profile Sets" Style="{StaticResource SectionTitle}"/>
+                  <TextBlock Text="In selected file — double-click to rename, right-click to copy/paste" Style="{StaticResource Muted}" Margin="0,3,0,8" TextWrapping="Wrap"/>
+                  <ListBox x:Name="LibraryList" Height="120" BorderThickness="0"
+                           SelectionChanged="Library_SelectionChanged"
+                           MouseDoubleClick="AvailableProfiles_DoubleClick"
+                           PreviewMouseRightButtonDown="LibraryList_RightButtonDown">
+                    <ListBox.ContextMenu>
+                      <ContextMenu>
+                        <MenuItem Header="Copy Set" Click="CopySet_Click"/>
+                        <MenuItem Header="Paste Set" Click="PasteSet_Click"/>
+                      </ContextMenu>
+                    </ListBox.ContextMenu>
+                  </ListBox>
+                </StackPanel>
+              </Border>
+            </Grid>
+
+            <Border Style="{StaticResource Card}" Margin="0,0,0,12">
+              <StackPanel>
+                <TextBlock Text="Safety / Alarm" Style="{StaticResource SectionTitle}"/>
+                <Grid Margin="0,8,0,0">
+                  <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="110"/><ColumnDefinition Width="80"/></Grid.ColumnDefinitions>
+                  <Grid.RowDefinitions><RowDefinition/><RowDefinition/><RowDefinition/></Grid.RowDefinitions>
+                  <TextBlock Grid.Row="0" Grid.Column="0" Text="Critical temp (auto-stop)" VerticalAlignment="Center" Foreground="{StaticResource MutedBrush}"/>
+                  <ComboBox  Grid.Row="0" Grid.Column="1" x:Name="CritModeBox" Margin="0,3,8,3" SelectionChanged="CritMode_Changed"/>
+                  <TextBox   Grid.Row="0" Grid.Column="2" x:Name="CritBox" Margin="0,3"/>
+                  <TextBlock Grid.Row="1" Grid.Column="0" Text="Sound alarm temp" VerticalAlignment="Center" Foreground="{StaticResource MutedBrush}"/>
+                  <ComboBox  Grid.Row="1" Grid.Column="1" x:Name="AlarmModeBox" Margin="0,3,8,3" SelectionChanged="AlarmMode_Changed"/>
+                  <TextBox   Grid.Row="1" Grid.Column="2" x:Name="AlarmBox" Margin="0,3"/>
+                  <TextBlock Grid.Row="2" Grid.Column="0" Text="Alarm auto-silence (ticks)" VerticalAlignment="Center" Foreground="{StaticResource MutedBrush}"/>
+                  <TextBox   Grid.Row="2" Grid.Column="2" x:Name="TimeAlarmBox" Margin="0,3"/>
+                </Grid>
+                <TextBlock Text="Static: an absolute °C limit. Dynamic: 1–15 °C added to the highest target in the profile set."
+                           Style="{StaticResource Muted}" TextWrapping="Wrap" Margin="0,8,0,0" FontSize="11"/>
+              </StackPanel>
+            </Border>
+
+            <Border Style="{StaticResource Card}" Margin="0,0,0,12">
+              <StackPanel>
+                <TextBlock Text="Bottom Heater" Style="{StaticResource SectionTitle}"/>
+                <Grid Margin="0,8,0,0">
+                  <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                  <StackPanel Grid.Column="0">
+                    <TextBlock Text="Power bottom" Style="{StaticResource FieldLabel}"/>
+                    <ComboBox x:Name="PowerBottomBox" Width="110" HorizontalAlignment="Left"/>
+                  </StackPanel>
+                  <CheckBox Grid.Column="1" x:Name="AutoCheck" Content="Auto (PID)" VerticalAlignment="Bottom" Checked="Auto_Changed" Unchecked="Auto_Changed"/>
+                </Grid>
+                <TextBlock Text="Auto boost (set point +)" Style="{StaticResource FieldLabel}"/>
+                <TextBox x:Name="AutoBoostBox" Width="110" HorizontalAlignment="Left"/>
+                <Grid Margin="0,8,0,0">
+                  <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="90"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                  <Grid.RowDefinitions><RowDefinition/><RowDefinition/><RowDefinition/><RowDefinition/></Grid.RowDefinitions>
+                  <TextBlock Grid.Row="0" Grid.Column="0" Text="Threshold 40%" VerticalAlignment="Center" Foreground="{StaticResource MutedBrush}"/>
+                  <TextBox   Grid.Row="0" Grid.Column="1" x:Name="B40Box" Margin="0,2"/>
+                  <CheckBox  Grid.Row="0" Grid.Column="2" x:Name="Chk40" Content="40%" Margin="8,0,0,0"/>
+                  <TextBlock Grid.Row="1" Grid.Column="0" Text="Threshold 60%" VerticalAlignment="Center" Foreground="{StaticResource MutedBrush}"/>
+                  <TextBox   Grid.Row="1" Grid.Column="1" x:Name="B60Box" Margin="0,2"/>
+                  <CheckBox  Grid.Row="1" Grid.Column="2" x:Name="Chk60" Content="60%" Margin="8,0,0,0"/>
+                  <TextBlock Grid.Row="2" Grid.Column="0" Text="Threshold 80%" VerticalAlignment="Center" Foreground="{StaticResource MutedBrush}"/>
+                  <TextBox   Grid.Row="2" Grid.Column="1" x:Name="B80Box" Margin="0,2"/>
+                  <CheckBox  Grid.Row="2" Grid.Column="2" x:Name="Chk80" Content="80%" Margin="8,0,0,0"/>
+                  <TextBlock Grid.Row="3" Grid.Column="0" Text="Threshold 100%" VerticalAlignment="Center" Foreground="{StaticResource MutedBrush}"/>
+                  <TextBox   Grid.Row="3" Grid.Column="1" x:Name="B100Box" Margin="0,2"/>
+                  <CheckBox  Grid.Row="3" Grid.Column="2" x:Name="Chk100" Content="100%" Margin="8,0,0,0"/>
+                </Grid>
+              </StackPanel>
+            </Border>
+
+          </StackPanel>
+        </ScrollViewer>
+      </Grid>
+    </Grid>
+  </DockPanel>
+</Window>

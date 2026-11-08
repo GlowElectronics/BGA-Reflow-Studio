@@ -1,0 +1,25 @@
+<Window x:Class="BGAReflowStudio.SerialTerminalWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Serial Terminal" Width="640" Height="460" MinWidth="420" MinHeight="260"
+        WindowStartupLocation="CenterOwner" Background="{StaticResource Canvas}" Icon="/icon.ico">
+  <Border Style="{StaticResource Card}" Margin="12">
+    <DockPanel>
+      <DockPanel DockPanel.Dock="Top" Margin="0,0,0,8">
+        <TextBlock Text="Serial Terminal" Style="{StaticResource SectionTitle}" VerticalAlignment="Center"/>
+        <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+          <CheckBox x:Name="AutoScroll" Content="Auto-scroll" IsChecked="True" VerticalAlignment="Center" Margin="0,0,14,0"/>
+          <Button Content="Clear" Width="72" Click="Clear_Click"/>
+        </StackPanel>
+      </DockPanel>
+      <TextBlock DockPanel.Dock="Bottom" x:Name="HintText" Style="{StaticResource Muted}" Margin="0,8,0,0"
+                 Text="Live TX/RX between the app and the controller (hex). Connect the COM port to see traffic."/>
+      <Border BorderBrush="{StaticResource Line}" BorderThickness="1" CornerRadius="8">
+        <TextBox x:Name="Output" IsReadOnly="True" IsReadOnlyCaretVisible="False"
+                 FontFamily="Consolas, Courier New" FontSize="12.5"
+                 Background="#0F172A" Foreground="#D1E7FF" BorderThickness="0" Padding="10"
+                 TextWrapping="NoWrap" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto"/>
+      </Border>
+    </DockPanel>
+  </Border>
+</Window>

@@ -1,0 +1,44 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
+    <RootNamespace>BGAReflowStudio</RootNamespace>
+    <AssemblyName>BGAReflowStudio</AssemblyName>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>icon.ico</ApplicationIcon>
+    <Version>1.0.0</Version>
+    <Product>BGA Reflow Studio</Product>
+    <Company>ACHI</Company>
+    <Description>Reflow profiling and control for ACHI IR PRO SC and ACHI IR 6500 rework stations.</Description>
+    <!-- ScottPlot pulls OpenTK (OpenGL backend) which only ships net4x TFMs; we use the GDI/WPF backend. -->
+    <NoWarn>$(NoWarn);NU1701</NoWarn>
+    <!-- Build timestamp (US date MMddyy + 24h time HHmm), baked at compile time and refreshed every build. -->
+    <BuildStamp>$([System.DateTime]::Now.ToString(MMddyy_HHmm))</BuildStamp>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <AssemblyMetadata Include="BuildStamp" Value="$(BuildStamp)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.IO.Ports" Version="9.0.0" />
+    <PackageReference Include="ScottPlot.WPF" Version="5.0.55" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="profiles\**\*.ini" CopyToOutputDirectory="PreserveNewest" />
+    <None Update="manuals\**\*.pdf" CopyToOutputDirectory="PreserveNewest" />
+    <None Update="alarm.wav" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Embedded as a resource so each Window can reference it via Icon="/icon.ico". -->
+    <Resource Include="icon.ico" />
+  </ItemGroup>
+
+</Project>
